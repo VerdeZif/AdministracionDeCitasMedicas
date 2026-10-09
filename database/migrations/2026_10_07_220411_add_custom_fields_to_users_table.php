@@ -13,17 +13,20 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('dni')->unique()->after('name');
+            $table->string('phone')->nullable()->after('dni');
             $table->enum('role', ['admin', 'doctor', 'patient'])->default('patient')->after('password');
             $table->foreignId('specialty_id')->nullable()->after('role')->constrained('specialties')->nullOnDelete();
         });
     }
+
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->dropForeign(['specialty_id']);
+            $table->dropColumn(['dni', 'phone', 'role', 'specialty_id']);
         });
     }
 };
