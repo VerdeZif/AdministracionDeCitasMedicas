@@ -5,7 +5,7 @@ Eres "la cara" del sistema. Tu trabajo convierte la lógica compleja del backend
 ## 1. Dominio del Layout Maestro
 - Eres el dueño del archivo `resources/views/layouts/app.blade.php`.
 - Debes estructurar la cabecera (Navbar), el pie de página (Footer) y el área de inyección de contenido (`@yield('content')`).
-- **Aplicación estricta de Identidad Corporativa:** Usa el verde agua claro (`#D6EEE8`) para fondos globales y el azul marino (`#0A1F8F`) para menús, textos y bordes de tarjetas.
+- **Aplicación estricta de Identidad Corporativa:** Usa el verde agua claro (`#D6EEE8`) para fondos globales y el azul marino (`#273B69`) para menús, textos y bordes de tarjetas.
 
 ## 2. Desarrollo de la Landing Page Dinámica
 - Las vistas `home.blade.php`, `services.blade.php`, y `specialists.blade.php` no deben tener datos "quemados" (hardcoded). Deben iterar mediante directivas Blade (`@foreach`) las variables enviadas por los controladores de Raquel.

@@ -18,18 +18,21 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
-            'name' => fake()->name(),
+            'name' => fake()->firstName(),
+            'last_name_paternal' => fake()->lastName(),
+            'last_name_maternal' => fake()->lastName(),
+            'document_type' => 'DNI',
             'dni' => fake()->unique()->numerify('########'),
+            'birth_date' => fake()->date('Y-m-d', '-18 years'),
             'phone' => fake()->numerify('9########'),
+            'gender' => fake()->randomElement(['M', 'F']),
             'email' => fake()->unique()->safeEmail(),
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'role' => 'patient',
-            'specialty_id' => null,
             'remember_token' => Str::random(10),
         ];
     }
-
     /**
      * Estado: crear un MÉDICO.
      */

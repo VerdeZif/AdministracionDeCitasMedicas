@@ -40,13 +40,16 @@ class SpecialtyController extends Controller
 
     public function destroy(Specialty $specialty)
     {
-        // La restricción cascadeOnDelete/restrictOnDelete de la base de datos que hiciste antes 
-        // bloqueará esto si la especialidad ya tiene citas. ¡Esa es la magia de tu diseño!
+        if ($specialty->doctors()->exists()) {
+            return back()->withErrors(['delete' => 'No se puede eliminar: hay médicos asignados a esta especialidad.']);
+        }
+
         try {
             $specialty->delete();
-            return back()->with('success', 'Especialidad eliminada.');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'No puedes eliminar esta especialidad porque ya tiene médicos o citas asignadas.']);
+        } catch (\Illuminate\Database\QueryException $e) {
+            return back()->withErrors(['delete' => 'No se puede eliminar: la especialidad tiene citas registradas.']);
         }
+
+        return redirect()->route('admin.especialidades.index')->with('success', 'Especialidad eliminada.');
     }
 }

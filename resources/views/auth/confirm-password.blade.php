@@ -1,27 +1,24 @@
 <x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('This is a secure area of the application. Please confirm your password before continuing.') }}
+    <div class="text-center mb-8 max-w-sm mx-auto">
+        <h1 class="text-2xl font-bold text-[#273B69]">Confirmar Contraseña</h1>
+        <p class="text-gray-500 mt-2 text-sm">
+            Esta es una zona segura. Por favor, confirma tu contraseña para continuar.
+        </p>
     </div>
 
-    <form method="POST" action="{{ route('password.confirm') }}">
+    <form method="POST" action="{{ route('password.confirm') }}" class="space-y-5 max-w-sm mx-auto">
         @csrf
 
-        <!-- Password -->
         <div>
-            <x-input-label for="password" :value="__('Password')" />
-
-            <x-text-input id="password" class="block mt-1 w-full"
-                            type="password"
-                            name="password"
-                            required autocomplete="current-password" />
-
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
+            <label for="password" class="block font-bold text-sm text-[#273B69]">Contraseña</label>
+            <input id="password" class="block mt-2 w-full rounded-xl border-gray-300 shadow-sm focus:border-[#273B69] focus:ring-[#273B69] p-3 text-sm" type="password" name="password" required autocomplete="current-password" />
+            <x-input-error :messages="$errors->get('password')" class="mt-2 text-red-500 text-sm" />
         </div>
 
-        <div class="flex justify-end mt-4">
-            <x-primary-button>
-                {{ __('Confirm') }}
-            </x-primary-button>
+        <div class="pt-2">
+            <button type="submit" class="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-md text-sm font-bold text-white bg-[#273B69] hover:bg-[#1e2d52] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#273B69] transition-colors uppercase tracking-wider">
+                Confirmar
+            </button>
         </div>
     </form>
 </x-guest-layout>

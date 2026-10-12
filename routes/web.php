@@ -14,11 +14,15 @@ use App\Http\Controllers\InvoiceController;
 |--------------------------------------------------------------------------
 */
 Route::get('/', function () {
-    return view('home');
+    $doctorsCount = \App\Models\User::where('role', 'doctor')->count();
+    $headquartersCount = \App\Models\Headquarter::count();
+    
+    return view('home', compact('doctorsCount', 'headquartersCount'));
 })->name('home');
 
 Route::get('/servicios', function () {
-    return view('services');
+    $specialties = \App\Models\Specialty::all();
+    return view('services', compact('specialties'));
 })->name('services');
 
 Route::get('/especialistas', function () {
@@ -27,7 +31,8 @@ Route::get('/especialistas', function () {
 })->name('specialists');
 
 Route::get('/contacto', function () {
-    return view('contact');
+    $headquarters = \App\Models\Headquarter::all();
+    return view('contact', compact('headquarters'));
 })->name('contact');
 /*
 |--------------------------------------------------------------------------
@@ -62,6 +67,16 @@ Route::middleware(['auth', 'role:patient'])->prefix('paciente')->name('patient.'
     Route::get('/panel', [AppointmentController::class, 'patientDashboard'])->name('dashboard');
     Route::get('/reservar', [AppointmentController::class, 'create'])->name('appointments.create');
     Route::post('/reservar', [AppointmentController::class, 'store'])->name('appointments.store');
+    Route::get('/citas/{appointment}/reservar', [AppointmentController::class, 'reserve'])->name('appointments.reserve');
+    Route::post('/citas/{appointment}/pagar', [AppointmentController::class, 'pay'])->name('appointments.pay');
+    Route::get('/citas/{appointment}/pdf', [AppointmentController::class, 'downloadPdf'])->name('appointments.pdf');
+    Route::delete('/citas/{appointment}', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
+});
+
+// Endpoints que consulta el calendario (sin el prefijo /paciente)
+Route::middleware(['auth', 'role:patient'])->group(function () {
+    Route::get('/api/disponibilidad-mes', [AppointmentController::class, 'monthAvailability']);
+    Route::get('/api/horarios-disponibles', [AppointmentController::class, 'getAvailableHours']);
 });
 
 /*
@@ -84,11 +99,11 @@ Route::middleware(['auth', 'role:doctor'])->prefix('medico')->name('doctor.')->g
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::resource('especialidades', SpecialtyController::class)->parameters(['especialidades' => 'specialty']);
     Route::resource('sedes', HeadquarterController::class)->parameters(['sedes' => 'headquarter']);
+    // Nueva ruta para crear y gestionar doctores
+    Route::resource('medicos', \App\Http\Controllers\DoctorManagementController::class); 
+    
     Route::get('/citas-globales', [AppointmentController::class, 'adminAppointments'])->name('appointments.all');
 });
 
-Route::get('/api/horarios-disponibles', [App\Http\Controllers\AppointmentController::class, 'getAvailableHours']);
-
-Route::get('/citas/{appointment}/descargar-pdf', [App\Http\Controllers\AppointmentController::class, 'downloadPdf'])->name('patient.appointments.pdf');
 
 require __DIR__.'/auth.php';

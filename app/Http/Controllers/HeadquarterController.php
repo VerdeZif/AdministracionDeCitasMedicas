@@ -39,9 +39,10 @@ class HeadquarterController extends Controller
     {
         try {
             $headquarter->delete();
-            return back()->with('success', 'Sede eliminada.');
-        } catch (\Exception $e) {
-            return back()->withErrors(['error' => 'No puedes eliminar esta sede porque tiene citas programadas.']);
+        } catch (\Illuminate\Database\QueryException $e) {
+            return back()->withErrors(['delete' => 'No se puede eliminar: la sede tiene citas registradas.']);
         }
+
+        return back()->with('success', 'Sede eliminada.');
     }
 }
