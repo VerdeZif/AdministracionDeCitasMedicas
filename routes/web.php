@@ -3,10 +3,12 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\AppointmentController;
-use App\Http\Controllers\DoctorBlockController;
 use App\Http\Controllers\SpecialtyController;
 use App\Http\Controllers\HeadquarterController;
 use App\Http\Controllers\InvoiceController;
+use App\Http\Controllers\DoctorAppointmentController;
+use App\Http\Controllers\DoctorBlockController;
+use App\Http\Controllers\PatientConsultationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -71,6 +73,7 @@ Route::middleware(['auth', 'role:patient'])->prefix('paciente')->name('patient.'
     Route::post('/citas/{appointment}/pagar', [AppointmentController::class, 'pay'])->name('appointments.pay');
     Route::get('/citas/{appointment}/pdf', [AppointmentController::class, 'downloadPdf'])->name('appointments.pdf');
     Route::delete('/citas/{appointment}', [AppointmentController::class, 'cancel'])->name('appointments.cancel');
+    Route::get('/citas/{appointment}', [PatientConsultationController::class, 'show'])->name('appointments.show');
 });
 
 // Endpoints que consulta el calendario (sin el prefijo /paciente)
@@ -85,10 +88,23 @@ Route::middleware(['auth', 'role:patient'])->group(function () {
 |--------------------------------------------------------------------------
 */
 Route::middleware(['auth', 'role:doctor'])->prefix('medico')->name('doctor.')->group(function () {
-    Route::get('/panel', [AppointmentController::class, 'doctorDashboard'])->name('dashboard');
+    // Agenda del día (ahora la maneja DoctorAppointmentController)
+    Route::get('/panel', [DoctorAppointmentController::class, 'index'])->name('dashboard');
+
+    // Acciones sobre las citas: Atender -> Finalizar, Ausente
+    Route::patch('/citas/{appointment}/atender', [DoctorAppointmentController::class, 'start'])->name('appointments.start');
+    Route::patch('/citas/{appointment}/finalizar', [DoctorAppointmentController::class, 'finish'])->name('appointments.finish');
+    Route::patch('/citas/{appointment}/ausente', [DoctorAppointmentController::class, 'absent'])->name('appointments.absent');
+
+    // Rutas anteriores (se mantienen por si otras vistas todavía las usan)
     Route::get('/agenda', [AppointmentController::class, 'doctorAppointments'])->name('appointments.index');
     Route::patch('/citas/{appointment}/estado', [AppointmentController::class, 'updateStatus'])->name('appointments.updateStatus');
-    Route::resource('bloqueos', DoctorBlockController::class)->parameters(['bloqueos' => 'doctorBlock']);
+    Route::patch('/citas/{appointment}/cancelar', [DoctorAppointmentController::class, 'cancel'])->name('appointments.cancel');
+
+    // Bloqueo de horarios: solo se usan index, store y destroy
+    Route::resource('bloqueos', DoctorBlockController::class)
+        ->only(['index', 'store', 'destroy'])
+        ->parameters(['bloqueos' => 'doctorBlock']);
 });
 
 /*

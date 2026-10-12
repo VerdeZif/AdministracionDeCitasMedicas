@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Appointment;
 use App\Models\DoctorBlock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -14,7 +15,7 @@ class DoctorBlockController extends Controller
         $blocks = DoctorBlock::where('doctor_id', Auth::id())
                     ->orderBy('date', 'desc')
                     ->get();
-                    
+
         return view('doctor.blocks.index', compact('blocks'));
     }
 
@@ -27,6 +28,20 @@ class DoctorBlockController extends Controller
             'end_time'   => 'required|date_format:H:i|after:start_time',
             'reason'     => 'required|string|max:255',
         ]);
+
+        // No permitir bloquear un rango donde ya hay citas activas
+        $conflict = Appointment::where('doctor_id', Auth::id())
+            ->whereDate('date', $validated['date'])
+            ->whereIn('status', ['Pendiente de Pago', 'Confirmada', 'En Curso'])
+            ->whereTime('time', '>=', $validated['start_time'])
+            ->whereTime('time', '<', $validated['end_time'])
+            ->exists();
+
+        if ($conflict) {
+            return back()->withInput()->withErrors([
+                'start_time' => 'Ya tienes citas en ese rango. Atiéndelas o reprograma antes de bloquearlo.',
+            ]);
+        }
 
         DoctorBlock::create([
             'doctor_id'  => Auth::id(), // Obligamos a que el bloqueo sea para el doctor logueado

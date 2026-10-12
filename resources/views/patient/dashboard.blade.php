@@ -8,6 +8,7 @@
         'En Curso'          => ['bg' => '#DBEAFE', 'text' => '#1E40AF'],
         'Atendida'          => ['bg' => '#E0F2F1', 'text' => '#00695C'],
         'Ausente'           => ['bg' => '#FEE2E2', 'text' => '#991B1B'],
+        'Cancelada'         => ['bg' => '#F3F4F6', 'text' => '#374151'],
     ];
 
     $proximas   = $appointments->whereIn('status', ['Pendiente de Pago', 'Confirmada', 'En Curso'])->count();
@@ -109,6 +110,26 @@
                     </div>
                 </div>
 
+                {{-- Aviso de cita cancelada --}}
+                @if($apt->status === 'Cancelada')
+                    <div class="mt-4 rounded-lg p-3 text-xs" style="background:#FEF2F2; color:#B91C1C">
+                        <span class="font-bold">{{ $apt->cancelled_by === 'doctor' ? 'Cancelada por el médico.' : 'Cancelada.' }}</span>
+                        @if($apt->cancellation_reason)
+                            Motivo: {{ $apt->cancellation_reason }}
+                        @endif
+                        @if($apt->refund_pending)
+                            <span class="block mt-1 font-semibold">Tu pago está pendiente de reembolso.</span>
+                        @endif
+                    </div>
+                @endif
+
+                {{-- Control recomendado --}}
+                @if($apt->status === 'Atendida' && $apt->follow_up_date)
+                    <p class="mt-4 text-xs" style="color:#00695C">
+                        📋 Control recomendado: {{ \Carbon\Carbon::parse($apt->follow_up_date)->format('d/m/Y') }}
+                    </p>
+                @endif
+
                 @if($apt->status === 'Pendiente de Pago')
                     <div class="mt-5 pt-4 border-t border-gray-100 flex justify-between items-center gap-2 text-sm">
                         <form method="POST" action="{{ route('patient.appointments.cancel', $apt) }}"
@@ -122,11 +143,18 @@
                         </a>
                     </div>
                 @else
-                    <div class="mt-5 pt-4 border-t border-gray-100 flex justify-end items-center text-sm">
-                        <a href="{{ route('patient.appointments.pdf', $apt->id) }}"
-                           class="font-semibold underline hover:no-underline" style="color:#4DB6AC">
-                            Descargar PDF
+                    <div class="mt-5 pt-4 border-t border-gray-100 flex justify-between items-center text-sm">
+                        <a href="{{ route('patient.appointments.show', $apt) }}"
+                           class="font-semibold underline hover:no-underline hl-navy">
+                            Ver detalle
                         </a>
+
+                        @if(in_array($apt->status, ['Confirmada', 'En Curso', 'Atendida']))
+                            <a href="{{ route('patient.appointments.pdf', $apt->id) }}"
+                               class="font-semibold underline hover:no-underline" style="color:#4DB6AC">
+                                Descargar PDF
+                            </a>
+                        @endif
                     </div>
                 @endif
             </div>

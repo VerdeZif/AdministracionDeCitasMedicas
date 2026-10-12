@@ -8,6 +8,7 @@
         'En Curso'          => ['bg' => '#DBEAFE', 'text' => '#1E40AF'],
         'Atendida'          => ['bg' => '#E0F2F1', 'text' => '#00695C'],
         'Ausente'           => ['bg' => '#FEE2E2', 'text' => '#991B1B'],
+        'Cancelada'         => ['bg' => '#F3F4F6', 'text' => '#374151'],
     ];
     $estados = array_keys($statusStyles);
 @endphp
@@ -131,6 +132,16 @@
                             <td>
                                 <span class="inline-block px-2 py-1 rounded-full text-xs font-bold"
                                       style="background:{{ $estilo['bg'] }}; color:{{ $estilo['text'] }}">{{ $apt->status }}</span>
+
+                                @if($apt->status === 'Cancelada' && $apt->cancellation_reason)
+                                    <span class="block text-xs text-gray-400 mt-1">
+                                        {{ $apt->cancelled_by === 'doctor' ? 'Por el médico' : 'Por el paciente' }}: {{ $apt->cancellation_reason }}
+                                    </span>
+                                @endif
+
+                                @if($apt->refund_pending)
+                                    <span class="block text-xs mt-1 font-semibold" style="color:#92400E">Reembolso pendiente</span>
+                                @endif
                             </td>
                         </tr>
                     @empty

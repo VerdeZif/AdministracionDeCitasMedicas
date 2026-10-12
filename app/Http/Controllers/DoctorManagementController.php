@@ -34,12 +34,13 @@ class DoctorManagementController extends Controller
             'password'           => 'required|string|min:8',
         ]);
 
-        User::create($data + [
+        // array_merge (y no "+") para que el password hasheado reemplace al de texto plano
+        User::create(array_merge($data, [
             'document_type'     => 'DNI',
             'role'              => 'doctor',
             'email_verified_at' => now(),
             'password'          => Hash::make($data['password']),
-        ]);
+        ]));
 
         return back()->with('success', 'Médico registrado con éxito.');
     }
