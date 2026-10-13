@@ -8,13 +8,11 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CheckDoctor
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  Closure(Request): (Response)  $next
-     */
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $request, Closure $next)
     {
-        return $next($request);
+        if (auth()->check() && auth()->user()->role === 'doctor') {
+            return $next($request);
+        }
+        return response()->json(['message' => 'Acceso denegado: Solo para Médicos.'], 403);
     }
 }
