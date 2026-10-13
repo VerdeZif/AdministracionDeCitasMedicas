@@ -1,29 +1,18 @@
 # Rol: Backend, Lógica de Negocio y Seguridad (Raquel)
 
-Eres el "cerebro" del sistema. Tu trabajo asegura que las vistas de Fernando procesen datos de manera segura y eficiente en las tablas diseñadas por Jybran.
+Eres el "cerebro" del sistema. Tu trabajo asegura que las vistas procesen datos de manera segura y eficiente en las tablas relacionales.
 
-## 1. Configuración de Rutas y Seguridad
-- **Archivo Principal:** Gestionas `routes/web.php`.
-- **Agrupamiento:** Debes crear grupos de rutas con prefijos (`/admin`, `/doctor`, `/patient`) y protegerlos utilizando middlewares.
-- **Middlewares a crear:**
-  - `CheckAdmin`: Verifica que `Auth::user()->role === 'admin'`.
-  - `CheckDoctor`: Verifica que `Auth::user()->role === 'doctor'`.
-  - `CheckPatient`: Verifica que `Auth::user()->role === 'patient'`.
+## 1. Seguridad, Rutas y Middlewares
+- Gestión absoluta de `routes/web.php`. Agrupación mediante `Route::prefix` y protección con `middleware(['auth', 'role:doctor'])`.
+- Interceptación de datos en el `RegisteredUserController`: Aplicación estricta de reglas de validación en backend (`digits:8`, `max:255`, `unique`) antes de persistir la información.
 
-## 2. Controladores (Lógica Transaccional)
-- `PageController`: Carga las vistas públicas (Home, Servicios, Especialistas). Consulta la BD para mandar a la vista los médicos activos.
-- `AppointmentController`: Contiene la lógica pesada. 
-  - **Método Store:** Valida que el paciente no intente alterar sus propios datos (RN-02). Valida que el médico tenga el horario libre (RN-03). Retorna un estado JSON para que el frontend abra el modal de pago.
-- `PaymentController`:
-  - Recibe el clic del modal de pagos.
-  - Implementa obligatoriamente un bloque `try-catch` envolviendo un `DB::transaction()`.
-  - Cambia la cita a `Confirmada`, crea la fila en `invoices`.
-  - Genera y retorna el PDF de la boleta.
+## 2. Controladores Clínicos (Core Business)
+- `DoctorAppointmentController`: Gestión del flujo de la cita. 
+  - Validaciones de tiempo (Avisos de citas olvidadas en el pasado).
+  - Funciones de cierre de atención (`diagnosis`, `instructions`).
+  - Función de cancelación capturando a quién cancela y justificando el motivo.
+- `DoctorBlockController`: Lógica de choque temporal. Antes de bloquear un rango, comparar el `start_time` y `end_time` contra las horas ya asignadas en `appointments`.
+- `PatientConsultationController`: Exposición segura en modo lectura del detalle médico para el paciente, previniendo fuga de datos de otros usuarios.
 
-## 3. Patrón de Diseño (Pasarela de Pagos)
-- Define el contrato en `app/Interfaces/PaymentGatewayInterface.php` con al menos el método `public function processPayment(array $data);`.
-- Implementa la lógica simulada en `app/Services/MockPaymentService.php` retornando un array de éxito. Esto prepara el sistema para el mundo real.
-
-## 4. Generación de PDF
-- Utilizar el paquete `barryvdh/laravel-dompdf`. 
-- Alimentar la vista del comprobante interno pasándole los objetos completos del Paciente, la Cita y el Médico mediante Eloquent.
+## 3. Integridad de Transacciones
+- Uso innegociable de `DB::transaction()` en procesos que involucren más de un cambio de estado crítico o inserciones relacionadas.

@@ -1,28 +1,23 @@
 # Reglas Críticas de Negocio y Lógica Transaccional
 
-Este documento establece las normativas inquebrantables del software. Los Controladores (Raquel) y las Vistas (Fernando) deben programarse para cumplir estrictamente estos lineamientos.
+## RN-01: Aislamiento Estricto y Seguridad de Roles
+1. Ningún usuario puede invadir módulos ajenos. Middleware estrictos: `CheckAdmin`, `CheckDoctor`, `CheckPatient`.
+2. Redirección inmediata al login (HTTP 403) si se intenta acceder a URLs no autorizadas.
+3. El registro público (`RegisteredUserController`) fuerza obligatoriamente el rol `patient`. Los doctores solo pueden ser creados por un `admin`.
 
-## RN-01: Aislamiento Estricto y Seguridad de Sesiones
-1. Ningún usuario no autenticado puede acceder a URLs que comiencen con `/admin`, `/doctor` o `/patient`.
-2. Si un Paciente intenta acceder a `/admin/dashboard`, el sistema debe interceptarlo, destruir su sesión (opcional por seguridad) y redirigirlo al Login con un código de error HTTP 403 (Forbidden).
-3. Las contraseñas deben estar obligatoriamente hasheadas con `Bcrypt` antes de guardarse en la base de datos.
+## RN-02: Flujo y Máquina de Estados de la Cita
+El campo `status` de la tabla `appointments` sigue una transición unidireccional:
+1. **Pendiente de Pago:** Estado inicial.
+2. **Confirmada:** Tras pago exitoso. Solo desde este estado el médico puede interactuar (Atender o Ausente).
+3. **En Curso:** El médico inicia la atención en consultorio.
+4. **Atendida:** El médico finaliza la cita, requiriéndose ingresar el `diagnosis` (diagnóstico) e `instructions` (indicaciones).
+5. **Ausente:** El paciente no llegó.
+6. **Cancelada:** Puede ejecutarse si está Pendiente o Confirmada. Requiere un `cancellation_reason`. Si la cita ya estaba Confirmada, activa la bandera `refund_pending` para el área administrativa.
 
-## RN-02: Integridad e Inmutabilidad del Perfil
-1. Los campos de identificación primaria (Documento de Identidad, Nombres y Apellidos) se capturan una sola vez durante el registro.
-2. En el flujo de agendamiento, estos campos deben inyectarse en el formulario con el atributo HTML `readonly` y/o `disabled`.
-3. El controlador `AppointmentController` ignorará cualquier dato de identidad proveniente del formulario de reserva, extrayéndolos directamente de `Auth::user()` para prevenir inyecciones maliciosas.
+## RN-03: Motor Anti-Colisión (Bloqueos y Citas)
+1. **Reservas de Pacientes:** No se puede agendar si la combinación `doctor_id`, `date` y `time` ya existe en estado Confirmada, En Curso, o si coincide con un registro en `doctor_blocks`.
+2. **Bloqueos de Médicos (`DoctorBlockController`):** El médico no puede bloquear un rango horario (`start_time` a `end_time`) si dentro de ese rango ya existe una cita confirmada para ese día. El sistema aborta la petición y muestra error.
 
-## RN-03: Motor Anti-Colisión de Agendas
-1. El sistema no permite *overbooking* (sobreventa). 
-2. Antes de procesar un pago o guardar una cita, el backend debe verificar que no exista un registro en la tabla `appointments` donde coincidan el `doctor_id`, `date` y `time` con estado `Confirmada` o `Pendiente`.
-3. Si existe colisión, se aborta la transacción y se retorna un mensaje de error claro a la vista del paciente.
-
-## RN-04: Transacciones Atómicas (El Flujo de Pago)
-1. El proceso de cambiar el estado de una cita a `Confirmada` y registrar el pago en la tabla `invoices` es indivisible.
-2. Obligatoriamente debe usarse `DB::transaction()` en Laravel. 
-3. Si la generación de la boleta falla por un error de base de datos o conexión, el estado de la cita debe aplicar un `rollback` y mantenerse como `Pendiente de Pago`.
-
-## RN-05: Reglas de Estados de Cita
-- **Pendiente de Pago:** Estado inicial tras seleccionar horario. Si no se paga, no bloquea el calendario (o se auto-cancela por script tras 15 minutos).
-- **Confirmada:** Transacción simulada exitosa. Bloquea el horario públicamente.
-- **Atendida / Ausente:** Estados finales gestionados exclusivamente por el Médico o Administrador.
+## RN-04: Gestión de Identidad (Formularios y Backend)
+1. Los campos DNI (8 dígitos precisos), Teléfono (9 dígitos) y Nombres (solo letras) deben validarse tanto en frontend (HTML5/JS) como en Backend (Reglas de Request).
+2. El perfil base del paciente es inmutable desde el form de reservas. El controlador extrae `patient_id` usando directamente `Auth::id()` para evitar suplantaciones por inyección en el DOM.
