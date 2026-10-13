@@ -1,32 +1,41 @@
 # Rol: Modelado de Datos y Base de Datos (Jybran)
 
-Eres "la memoria y el núcleo" del sistema. Si tu diseño relacional falla, todo el sistema colapsará. Trabajarás exclusivamente en la carpeta `database/` y `app/Models/`.
+Eres "la memoria" del sistema. Si el diseño relacional y las restricciones SQL fallan, todo el sistema colapsará. Trabajas en `database/` y `app/Models/`.
 
-## 1. Diseño Relacional (Migraciones DDL)
-Debes crear los archivos de migración estructurando tipos de datos precisos en MySQL:
+## 1. Migraciones y Diseño DDL
+Debes construir la estructura que soporte todas las funcionalidades acordadas:
+- Expandir la tabla `users` para capturar demografía completa (`dni`, `last_name_paternal`, `phone`, `birth_date`).
+- Implementar la tabla `dependents` asociada al paciente.
+- Expandir `appointments` incorporando los metadatos clínicos:
+  - `diagnosis`, `instructions` (textos, anulables).
+  - `cancelled_by`, `cancellation_reason` (para trazabilidad).
+  - `refund_pending` (boolean) para control de devoluciones.
+- Resolver el orden de ejecución de las llaves foráneas (`Specialties` se migra antes que `Users`).
 
-- **Tabla `users` (Extendida):**
-  - Añadir columnas: `dni` (string, único, max: 8 o 20 según región), `phone`, `role` (enum: 'admin', 'doctor', 'patient'), `specialty_id` (foreign key anulable, solo para médicos).
-- **Tabla `specialties`:**
-  - `name` (string), `description` (text), `price` (decimal 8,2 para precisión financiera).
-- **Tabla `appointments`:**
-  - `patient_id` (fk), `doctor_id` (fk), `specialty_id` (fk).
-  - `date` (date), `time` (time).
-  - `status` (enum: 'Pendiente de Pago', 'Confirmada', 'En Curso', 'Atendida', 'Ausente').
-- **Tabla `invoices` (Boletas internas):**
-  - `appointment_id` (fk), `amount` (decimal 8,2), `payment_method` (string: ej. 'Mock_Visa', 'Mock_Yape'), `issued_at` (timestamp).
+## 2. Diagrama Entidad Relación (Mermaid)
+Tú mantienes la versión oficial de la arquitectura de la base de datos (copiada también en el manual técnico):
 
-## 2. Configuración de Modelos (Eloquent ORM)
-- En `app/Models/User.php`, protege los campos añadiéndolos a la propiedad `$fillable`.
-- Configura las relaciones:
-  - `User` (como médico) `belongsTo` `Specialty`.
-  - `Appointment` `belongsTo` `User` (patient_id) y `User` (doctor_id).
-  - `Appointment` `hasOne` `Invoice`.
+```mermaid
+erDiagram
+    USERS ||--o{ APPOINTMENTS : "agenda (paciente)"
+    USERS ||--o{ APPOINTMENTS : "atiende (doctor)"
+    USERS ||--o{ DEPENDENTS : "registra familiar"
+    USERS }o--|| SPECIALTIES : "pertenece a"
+    SPECIALTIES ||--o{ APPOINTMENTS : "clasifica"
+    HEADQUARTERS ||--o{ APPOINTMENTS : "alberga"
+    DEPENDENTS ||--o{ APPOINTMENTS : "asiste a"
+    USERS ||--o{ DOCTOR_BLOCKS : "bloquea agenda"
+    
+    USERS { bigint id PK }
+    APPOINTMENTS { bigint id PK }
+    SPECIALTIES { bigint id PK }
+    HEADQUARTERS { bigint id PK }
+    DEPENDENTS { bigint id PK }
+    DOCTOR_BLOCKS { bigint id PK }
+```
+*(Nota: Estructura de columnas completa detallada en los scripts de migraciones).*
 
-## 3. Seeders (Poblado de Datos para Desarrollo)
-- Eres el responsable de crear los `DatabaseSeeder.php` y *Factories*.
-- El equipo necesita que al correr `php artisan migrate:fresh --seed`, la base de datos se llene con:
-  - 1 Usuario Administrador maestro.
-  - 5 Especialidades reales con precios.
-  - 3 Médicos asignados a esas especialidades.
-  - 10 Pacientes de prueba (para que Fernando pueda maquetar las tablas de listados visualmente llenas).
+## 3. Seeders y Factories (Poblado)
+- Mantener actualizado el `DatabaseSeeder.php` para que al usar `php artisan migrate:fresh --seed` el sistema despliegue:
+  - Administradores de prueba, Doctores con especialidad, y Pacientes funcionales.
+  - Catálogos base de sedes y especialidades para que el equipo pueda trabajar sin bases de datos vacías.

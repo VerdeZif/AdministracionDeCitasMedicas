@@ -14,10 +14,20 @@ return new class extends Migration
         Schema::create('users', function (Blueprint $table) {
             $table->id();
             $table->string('name');
+            $table->string('last_name_paternal');
+            $table->string('last_name_maternal');
+            $table->string('document_type')->default('DNI');
+            $table->string('dni')->unique();
+            $table->date('birth_date');
+            $table->string('phone')->nullable();
+            $table->enum('gender', ['M', 'F']);
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
+            $table->enum('role', ['admin', 'doctor', 'patient'])->default('patient');
+            $table->unsignedBigInteger('specialty_id')->nullable();
             $table->rememberToken();
+            $table->softDeletes();
             $table->timestamps();
         });
 
